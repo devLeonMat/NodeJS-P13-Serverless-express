@@ -15,13 +15,16 @@ service: NodeJS-P13-Serverless-express
 
 custom:
   tableName: 'users-table-${self:provider.stage}'
+  dynamodb:
+    start:
+      migrate: true
 # app and org for use with dashboard.serverless.com
 #app: your-app-name
 #org: your-org-name
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-# frameworkVersion: "=X.X.X"
+frameworkVersion: '2'
 
 provider:
   name: aws
@@ -29,7 +32,7 @@ provider:
   stage: dev
   iamRoleStatements:
     - Effect: Allow
-      action:
+      Action:
         - dynamodb:Query
         - dynamodb:Scan
         - dynamodb:GetItem
@@ -37,10 +40,9 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource:
-        - {"Fn::GetAtt": ["UsersDynamoDBTable","Arn"]}
-  enviroment:
+        - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }
+  environment:
     USERS_TABLE: ${self:custom.tableName}
-
 
 # you can overwrite defaults here
 #  stage: dev
@@ -68,12 +70,11 @@ provider:
 
 # you can add packaging information here
 #package:
-#  include:
+#  patterns:
+#    - '!exclude-me.js'
+#    - '!exclude-me-dir/**'
 #    - include-me.js
 #    - include-me-dir/**
-#  exclude:
-#    - exclude-me.js
-#    - exclude-me-dir/**
 
 functions:
   app:
@@ -81,28 +82,32 @@ functions:
     events:
       - http: ANY /
       - http: ANY {proxy+}
-  resources:
-    Resources:
-      UsersDynamoDBTable:
-        Type: 'AWS::DynamoDB::Table'
-        Properties:
-          AttributeDefinitions:
-            - AttributeName: userId
-              AttributeType: S
-          KeySchema:
-            - AttributeName: userId
-              KeyType: HASH
-          ProvisionedThroughput:
-            ReadCapacityUnits: 1
-            WriteCapacityUnits: 1
-          tableName: ${self:custom.tableName}
+
+resources:
+  Resources:
+    UsersDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: userId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.tableName}
+
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
 #    events:
-#      - http:
-#          path: users/create
+#      - httpApi:
+#          path: /users/create
 #          method: get
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}
